@@ -77,9 +77,21 @@ with open(file_path, "rb") as f:
             cp_info['tag'] = ConstantPoolStrings.NameAndType
             cp_info['name_index'] = GetInt(2, f)
             cp_info['descriptor_index'] = GetInt(2,f)
+        elif tag == ConstantPoolTypes.Utf8:
+            cp_info['tag'] = ConstantPoolStrings.Utf8
+            cp_info['length'] = GetInt(2,f)
+            cp_info['bytes'] = f.read(cp_info['length'])
+        elif tag == ConstantPoolTypes.Fieldref:
+            cp_info['tag'] = ConstantPoolStrings.Fieldref
+            cp_info['class_index'] = GetInt(2, f)
+            cp_info['name_and_type_index'] = GetInt(2, f)
+        elif tag == ConstantPoolTypes.String:
+            cp_info['tag'] = ConstantPoolStrings.String
+            cp_info['string_index'] = GetInt(2, f)
         else:
             print(f"Nothing for {tag} yet")
         if cp_info: #Ignore the not implemented stuff
             constant_pool.append(cp_info)
+    # For now, print the things
     print(f"clazz: {clazz}")
     pp.pprint(constant_pool)
