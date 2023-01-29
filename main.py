@@ -3,7 +3,9 @@
 
 import pprint
 from enum import IntFlag, StrEnum
+from io import BufferedReader
 
+############### TYPE ENUMS ##################################
 class ConstantPoolTypes(IntFlag):
     Utf8               =1
     Integer            =3
@@ -42,15 +44,18 @@ class ConstantPoolStrings(StrEnum):
     Module             ="CONSTANT_Module"
     Package            ="CONSTANT_Package"
 
+################## METHOD CONSTANTS ###############
 file_path = "./Main.class"
 pp = pprint.PrettyPrinter()
 
-def GetInt(count: int, f) -> int:
+############# USEFUL PARSING FUNCTIONS ############
+def GetInt(count: int, f: BufferedReader) -> int:
     return int.from_bytes(f.read(count), 'big')
 
-def GetHex(count: int, f):
+def GetHex(count: int, f: BufferedReader) -> str:
     return hex(int.from_bytes(f.read(count), 'big'))
 
+############## MAIN PARSING LOOP ###################
 with open(file_path, "rb") as f:
     clazz = {}
     clazz['magic'] = GetHex(4,f)
@@ -65,12 +70,16 @@ with open(file_path, "rb") as f:
             cp_info['tag'] = ConstantPoolStrings.Methodref
             cp_info['class_index'] = GetInt(2, f)
             cp_info['name_and_type_index'] = GetInt(2,f)
-            constant_pool.append(cp_info)
         elif tag == ConstantPoolTypes.Class:
             cp_info['tag'] = ConstantPoolStrings.Class
             cp_info['name_index'] = GetInt(2, f)
-            constant_pool.append(cp_info)
+        elif tag == ConstantPoolTypes.NameAndType:
+            cp_info['tag'] = ConstantPoolStrings.NameAndType
+            cp_info['name_index'] = GetInt(2, f)
+            cp_info['descriptor_index'] = GetInt(2,f)
         else:
             print(f"Nothing for {tag} yet")
+        if cp_info: #Ignore the not implemented stuff
+            constant_pool.append(cp_info)
     print(f"clazz: {clazz}")
     pp.pprint(constant_pool)
