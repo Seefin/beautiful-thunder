@@ -2,7 +2,7 @@
 
 
 import pprint
-from enum import IntFlag
+from enum import IntFlag, StrEnum
 
 class ConstantPoolTypes(IntFlag):
     Utf8               =1
@@ -23,6 +23,25 @@ class ConstantPoolTypes(IntFlag):
     Module             =19
     Package            =20
 
+class ConstantPoolStrings(StrEnum):
+    Utf8               ="CONSTANT_Utf8"
+    Integer            ="CONSTANT_Integer"
+    Float              ="CONSTANT_Float"
+    Long               ="CONSTANT_Long"
+    Double             ="CONSTANT_Double"
+    Class              ="CONSTANT_Class"
+    String             ="CONSTANT_String"
+    Fieldref           ="CONSTANT_Fieldref"
+    Methodref          ="CONSTANT_Methodref"
+    InterfaceMethodref ="CONSTANT_InterfaceMethodref"
+    NameAndType        ="CONSTANT_NameAndType"
+    MethodHandle       ="CONSTANT_MethodHandle"
+    MethodType         ="CONSTANT_MethodType"
+    Dynamic            ="CONSTANT_Dynamic"
+    InvokeDynamic      ="CONSTANT_InvokeDynamic"
+    Module             ="CONSTANT_Module"
+    Package            ="CONSTANT_Package"
+
 file_path = "./Main.class"
 pp = pprint.PrettyPrinter()
 
@@ -38,14 +57,20 @@ with open(file_path, "rb") as f:
     clazz['minor'] = GetInt(2, f)
     clazz['major'] = GetInt(2, f)
     constant_pool_count = GetInt(2, f)
+    constant_pool = []
     for i in range(constant_pool_count-1):
         cp_info = {}
-        cp_info['tag'] = GetInt(1,f)
-        if cp_info['tag'] == ConstantPoolTypes.Methodref:
+        tag = GetInt(1, f)
+        if tag == ConstantPoolTypes.Methodref:
+            cp_info['tag'] = ConstantPoolStrings.Methodref
             cp_info['class_index'] = GetInt(2, f)
             cp_info['name_and_type_index'] = GetInt(2,f)
-            pp.pprint(cp_info)
+            constant_pool.append(cp_info)
+        elif tag == ConstantPoolTypes.Class:
+            cp_info['tag'] = ConstantPoolStrings.Class
+            cp_info['name_index'] = GetInt(2, f)
+            constant_pool.append(cp_info)
         else:
-            assert False, f"Unexpected tag {cp_info['tag']}"
-            exit(0)
-    pp.pprint(clazz)
+            print(f"Nothing for {tag} yet")
+    print(f"clazz: {clazz}")
+    pp.pprint(constant_pool)
