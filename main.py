@@ -46,7 +46,7 @@ class ConstantPoolStrings(StrEnum):
 
 ################## METHOD CONSTANTS ###############
 file_path = "./Main.class"
-pp = pprint.PrettyPrinter()
+pp = pprint.PrettyPrinter(indent=4)
 
 ############# USEFUL PARSING FUNCTIONS ############
 def GetInt(count: int, f: BufferedReader) -> int:
@@ -55,43 +55,49 @@ def GetInt(count: int, f: BufferedReader) -> int:
 def GetHex(count: int, f: BufferedReader) -> str:
     return hex(int.from_bytes(f.read(count), 'big'))
 
-############## MAIN PARSING LOOP ###################
-with open(file_path, "rb") as f:
+def ParseFileToDict(filename: str) -> dict:
     clazz = {}
-    clazz['magic'] = GetHex(4,f)
-    clazz['minor'] = GetInt(2, f)
-    clazz['major'] = GetInt(2, f)
-    constant_pool_count = GetInt(2, f)
-    constant_pool = []
-    for i in range(constant_pool_count-1):
-        cp_info = {}
-        tag = GetInt(1, f)
-        if tag == ConstantPoolTypes.Methodref:
-            cp_info['tag'] = ConstantPoolStrings.Methodref
-            cp_info['class_index'] = GetInt(2, f)
-            cp_info['name_and_type_index'] = GetInt(2,f)
-        elif tag == ConstantPoolTypes.Class:
-            cp_info['tag'] = ConstantPoolStrings.Class
-            cp_info['name_index'] = GetInt(2, f)
-        elif tag == ConstantPoolTypes.NameAndType:
-            cp_info['tag'] = ConstantPoolStrings.NameAndType
-            cp_info['name_index'] = GetInt(2, f)
-            cp_info['descriptor_index'] = GetInt(2,f)
-        elif tag == ConstantPoolTypes.Utf8:
-            cp_info['tag'] = ConstantPoolStrings.Utf8
-            cp_info['length'] = GetInt(2,f)
-            cp_info['bytes'] = f.read(cp_info['length'])
-        elif tag == ConstantPoolTypes.Fieldref:
-            cp_info['tag'] = ConstantPoolStrings.Fieldref
-            cp_info['class_index'] = GetInt(2, f)
-            cp_info['name_and_type_index'] = GetInt(2, f)
-        elif tag == ConstantPoolTypes.String:
-            cp_info['tag'] = ConstantPoolStrings.String
-            cp_info['string_index'] = GetInt(2, f)
-        else:
-            print(f"Nothing for {tag} yet")
-        if cp_info: #Ignore the not implemented stuff
-            constant_pool.append(cp_info)
-    # For now, print the things
-    print(f"clazz: {clazz}")
-    pp.pprint(constant_pool)
+    with open(filename, "rb") as f:
+        clazz['magic'] = GetHex(4,f)
+        clazz['minor'] = GetInt(2, f)
+        clazz['major'] = GetInt(2, f)
+        constant_pool_count = GetInt(2, f)
+        constant_pool = []
+        for _ in range(constant_pool_count-1):
+            cp_info = {}
+            tag = GetInt(1, f)
+            if tag == ConstantPoolTypes.Methodref:
+                cp_info['tag'] = ConstantPoolStrings.Methodref
+                cp_info['class_index'] = GetInt(2, f)
+                cp_info['name_and_type_index'] = GetInt(2,f)
+            elif tag == ConstantPoolTypes.Class:
+                cp_info['tag'] = ConstantPoolStrings.Class
+                cp_info['name_index'] = GetInt(2, f)
+            elif tag == ConstantPoolTypes.NameAndType:
+                cp_info['tag'] = ConstantPoolStrings.NameAndType
+                cp_info['name_index'] = GetInt(2, f)
+                cp_info['descriptor_index'] = GetInt(2,f)
+            elif tag == ConstantPoolTypes.Utf8:
+                cp_info['tag'] = ConstantPoolStrings.Utf8
+                cp_info['length'] = GetInt(2,f)
+                cp_info['bytes'] = f.read(cp_info['length'])
+            elif tag == ConstantPoolTypes.Fieldref:
+                cp_info['tag'] = ConstantPoolStrings.Fieldref
+                cp_info['class_index'] = GetInt(2, f)
+                cp_info['name_and_type_index'] = GetInt(2, f)
+            elif tag == ConstantPoolTypes.String:
+                cp_info['tag'] = ConstantPoolStrings.String
+                cp_info['string_index'] = GetInt(2, f)
+            else:
+                print(f"Nothing for {tag} yet")
+            if cp_info: #Ignore the not implemented stuff
+                constant_pool.append(cp_info)
+        clazz['constant_pool'] = constant_pool
+    return clazz
+
+############## MAIN PARSING LOOP ###################
+clazz = ParseFileToDict(file_path)
+print(f"File {file_path} references these classes:")
+for cp_info in clazz['constant_pool']:
+    if cp_info['tag'] == ConstantPoolStrings.Class:
+        print(f"       {clazz['constant_pool'][cp_info['name_index'] -1]['bytes']}")
