@@ -2,10 +2,13 @@
 
 
 import pprint
+import json
+import sys
 from enum import IntFlag, StrEnum
 from io import BufferedReader
 
 ############### TYPE ENUMS ##################################
+
 class ConstantPoolTypes(IntFlag):
     Utf8               =1
     Integer            =3
@@ -55,6 +58,28 @@ def GetInt(count: int, f: BufferedReader) -> int:
 def GetHex(count: int, f: BufferedReader) -> str:
     return hex(int.from_bytes(f.read(count), 'big'))
 
+def GetAccessFlag(flags: int) -> list:
+    flag = []
+    if 0x0001 & flags:
+        flag.append("ACC_PUBLIC")
+    if 0x0010 & flags:
+        flag.append("ACC_FINAL")
+    if 0x0020 & flags:
+        flag.append("ACC_SUPER")
+    if 0x0200 & flags:
+        flag.append("ACC_INTERFACE")
+    if 0x0400 & flags:
+        flag.append("ACC_ABSTRACT")
+    if 0x1000 & flags:
+        flag.append("ACC_SYNTHETIC")
+    if 0x2000 & flags:
+        flag.append("ACC_ANNOTATION")
+    if 0x4000 & flags:
+        flag.append("ACC_ENUM")
+    if 0x8000 & flags:
+        flag.append("ACC_MODULE")
+    return flag
+
 def ParseFileToDict(filename: str) -> dict:
     clazz = {}
     with open(filename, "rb") as f:
@@ -80,7 +105,7 @@ def ParseFileToDict(filename: str) -> dict:
             elif tag == ConstantPoolTypes.Utf8:
                 cp_info['tag'] = ConstantPoolStrings.Utf8
                 cp_info['length'] = GetInt(2,f)
-                cp_info['bytes'] = f.read(cp_info['length'])
+                cp_info['bytes'] = f.read(cp_info['length']).decode('utf-8')
             elif tag == ConstantPoolTypes.Fieldref:
                 cp_info['tag'] = ConstantPoolStrings.Fieldref
                 cp_info['class_index'] = GetInt(2, f)
@@ -93,11 +118,17 @@ def ParseFileToDict(filename: str) -> dict:
             if cp_info: #Ignore the not implemented stuff
                 constant_pool.append(cp_info)
         clazz['constant_pool'] = constant_pool
+        clazz['access_flags'] = GetAccessFlag(GetInt(2, f))
+        clazz['this_class'] = GetInt(2, f)
+        clazz['super_class'] = GetInt(2, f)
+        clazz['interfaces_count'] = GetInt(2, f)
     return clazz
 
 ############## MAIN PARSING LOOP ###################
 clazz = ParseFileToDict(file_path)
-print(f"File {file_path} references these classes:")
-for cp_info in clazz['constant_pool']:
-    if cp_info['tag'] == ConstantPoolStrings.Class:
-        print(f"       {clazz['constant_pool'][cp_info['name_index'] -1]['bytes']}")
+# Debug with jq if needed
+json.dump(clazz, fp=sys.stdout)
+#print(f"File {file_path} references these classes:")
+#for cp_info in clazz['constant_pool']:
+#    if cp_info['tag'] == ConstantPoolStrings.Class:
+#        print(f"       {clazz['constant_pool'][cp_info['name_index'] -1]['bytes']}")
