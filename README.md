@@ -2,7 +2,7 @@
 Parse java class files in python, mostly to learn how text parsing
 and processing in Python works.
 
-Heavily based on [https://github.com/tsoding/JelloVM](https://github.com/tsoding/JelloVMM).
+Heavily based on [https://github.com/tsoding/JelloVM](https://github.com/tsoding/JelloVM).
 
 ## References
   - https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-4.html
